@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: mindconnect
+      MYSQL_USER: minduser
+      MYSQL_PASSWORD: mindpass
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  backend:
+    build: .
+    image: mindconnect/backend:latest
+    depends_on:
+      - db
+    environment:
+      JDBC_URL: jdbc:mysql://db:3306/mindconnect?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USER: minduser
+      DB_PASS: mindpass
+      APP_JWT_SECRET: change_this_secret_change_now
+      APP_JWT_EXPIRATION_MS: 86400000
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/mindconnect?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: minduser
+      SPRING_DATASOURCE_PASSWORD: mindpass
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    # optional healthcheck: enable if your backend exposes /actuator/health
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+
+volumes:
+  db_data:
